@@ -1361,6 +1361,24 @@
                     return myPwr > bestPwrOnTable;
                 });
 
+                // If partner is currently winning with a trump, avoid overtrumping them
+                // unless it's a high-urgency situation. Always never overtrump a partner's Small Joker.
+                if (partnerWins && getEffectiveSuit(bestPlayed.c) === TRUMP) {
+                    const myTrumps = valid.filter(i => suitOf(i) === TRUMP).length;
+                    const highUrgency = (tricksNeeded >= 2) || myTrumps >= 2 || isAggro;
+                    // remove Big Joker from canWin if partner played Small Joker
+                    if (bestPlayed.c.rank === 'SJ') {
+                        for (let j = canWin.length - 1; j >= 0; j--) {
+                            if (h[canWin[j]].rank === 'BJ') canWin.splice(j, 1);
+                        }
+                    } else if (!highUrgency) {
+                        // filter out any plays that would overtrump partner's winning trump
+                        for (let j = canWin.length - 1; j >= 0; j--) {
+                            if (suitOf(canWin[j]) === TRUMP && power(canWin[j]) > bestPwrOnTable) canWin.splice(j, 1);
+                        }
+                    }
+                }
+
                 if (tricksNeeded > 0 && canWin.length > 0) {
                     choice = isAggro ? lowest(canWin) : lowest(canWin);
                 } else if (partnerWins && !isAggro) {
